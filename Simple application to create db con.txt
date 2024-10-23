@@ -1,0 +1,78 @@
+Simple application to create db connect through properties ,insert anything(user input) and view table content
+package Favorite;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Properties;
+import java.util.Scanner;
+public class FavoriteNumbers {
+private static String URL;
+private static String USER;
+private static String PASSWORD;
+public static void main(String[] args) { 
+loadDatabaseConfig();
+try { 
+Connection connection = DriverManager.getConnection(URL, USER, PASSWORD);
+System.out.println("Connected to the database!");
+createTableIfNotExists(connection);
+Scanner scanner = new Scanner(System.in);
+System.out.print("Enter your favorite number: ");
+int favoriteNumber = scanner.nextInt(); // Take user input
+// Add the favorite number
+addFavoriteNumber(connection, favoriteNumber);
+// View all favorite numbers
+viewFavoriteNumbers(connection);
+// Close the connection
+connection.close();
+scanner.close(); // Close the scanner
+} catch (SQLException e) {
+e.printStackTrace();
+}
+}
+private static void loadDatabaseConfig() {
+Properties properties = new Properties();
+try (FileInputStream input = new FileInputStream("F:/java_assignments/bookdb/src/config.properties")) {
+properties.load(input);
+URL = properties.getProperty("db.url");
+USER = properties.getProperty("db.user");
+PASSWORD = properties.getProperty("db.password");
+} catch (IOException e) {
+System.out.println("Error loading configuration: " + e.getMessage());
+e.printStackTrace();
+}
+}
+private static void createTableIfNotExists(Connection connection) throws SQLException {
+String createTableSQL = "IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'FavoriteNumbers') "
++ "CREATE TABLE FavoriteNumbers ("
++ "id INT PRIMARY KEY IDENTITY(1,1),"
++ "number INT)";
+PreparedStatement preparedStatement = connection.prepareStatement(createTableSQL);
+preparedStatement.executeUpdate();
+System.out.println("Checked and created table if it did not exist.");
+}
+private static void addFavoriteNumber(Connection connection, int number) throws SQLException {
+String insertSQL = "INSERT INTO FavoriteNumbers (number) VALUES (?)";
+PreparedStatement preparedStatement = connection.prepareStatement(insertSQL);
+preparedStatement.setInt(1, number);
+preparedStatement.executeUpdate();
+System.out.println("Added favorite number: " + number);
+}
+private static void viewFavoriteNumbers(Connection connection) throws SQLException {
+String selectSQL = "SELECT * FROM FavoriteNumbers";
+ResultSet resultSet = connection.createStatement().executeQuery(selectSQL);
+System.out.println("Favorite Numbers:");
+while (resultSet.next()) {
+System.out.println(resultSet.getInt("number"));
+}
+}
+}
+
+Config file :
+db.url=jdbc:sqlserver://172.16.51.64;databaseName=241047011;encrypt=true;trustServerCertificate=true
+db.user=deepthi
+db.password=Dee@01
+
