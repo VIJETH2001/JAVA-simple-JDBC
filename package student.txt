@@ -83,3 +83,9 @@ public class StudentDetails {
         }
     }
 }
+
+
+Config file :
+db.url=jdbc:sqlserver://172.16.51.64;databaseName=241047011;encrypt=true;trustServerCertificate=true
+db.user=deepthi
+db.password=Dee@01
