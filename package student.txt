@@ -1,0 +1,85 @@
+package Favorite;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.sql.*;
+import java.util.Properties;
+import java.util.Scanner;
+
+public class StudentDetails {
+    private static String URL;
+    private static String USER;
+    private static String PASSWORD;
+
+    public static void main(String[] args) {
+        loadDatabaseConfig();  // Load the database configuration from properties file
+        try {
+            Connection connection = DriverManager.getConnection(URL, USER, PASSWORD);  // Connect to the database
+            System.out.println("Connected to the database!");
+            
+            createTableIfNotExists(connection);  // Create the table if it doesn't exist
+
+            Scanner scanner = new Scanner(System.in);
+
+            System.out.print("Enter student name: ");
+            String studentName = scanner.nextLine();  // Take student's name as input
+
+            System.out.print("Enter roll number: ");
+            int rollNumber = scanner.nextInt();  // Take roll number as input
+
+            addStudentDetail(connection, studentName, rollNumber);  // Add the student details to the database
+
+            viewStudentDetails(connection);  // View all student details from the database
+
+            connection.close();  // Close the connection
+            scanner.close();  // Close the scanner
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Load the database configuration from the properties file
+    private static void loadDatabaseConfig() {
+        Properties properties = new Properties();
+        try (FileInputStream input = new FileInputStream("F:/java_assignments/bookdb/src/config.properties")) {
+            properties.load(input);
+            URL = properties.getProperty("db.url");
+            USER = properties.getProperty("db.user");
+            PASSWORD = properties.getProperty("db.password");
+        } catch (IOException e) {
+            System.out.println("Error loading configuration: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    // Create the StudentDetails table if it doesn't exist
+    private static void createTableIfNotExists(Connection connection) throws SQLException {
+        String createTableSQL = "IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'StudentDetails') "
+            + "CREATE TABLE StudentDetails ("
+            + "id INT PRIMARY KEY IDENTITY(1,1),"
+            + "name VARCHAR(255), "
+            + "rollNumber INT)";
+        PreparedStatement preparedStatement = connection.prepareStatement(createTableSQL);
+        preparedStatement.executeUpdate();
+        System.out.println("Checked and created table if it did not exist.");
+    }
+
+    // Insert the student's details into the database
+    private static void addStudentDetail(Connection connection, String name, int rollNumber) throws SQLException {
+        String insertSQL = "INSERT INTO StudentDetails (name, rollNumber) VALUES (?, ?)";
+        PreparedStatement preparedStatement = connection.prepareStatement(insertSQL);
+        preparedStatement.setString(1, name);  // Set the student's name
+        preparedStatement.setInt(2, rollNumber);  // Set the roll number
+        preparedStatement.executeUpdate();
+        System.out.println("Added student: " + name + " with roll number: " + rollNumber);
+    }
+
+    // View all student details from the database
+    private static void viewStudentDetails(Connection connection) throws SQLException {
+        String selectSQL = "SELECT * FROM StudentDetails";
+        ResultSet resultSet = connection.createStatement().executeQuery(selectSQL);
+        System.out.println("Student Details:");
+        while (resultSet.next()) {
+            System.out.println(resultSet.getString("name") + ": " + resultSet.getInt("rollNumber"));
+        }
+    }
+}
